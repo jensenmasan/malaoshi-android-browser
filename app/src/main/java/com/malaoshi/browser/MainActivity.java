@@ -2,6 +2,8 @@ package com.malaoshi.browser;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
@@ -11,12 +13,14 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.PopupMenu;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.mozilla.geckoview.GeckoRuntime;
 import org.mozilla.geckoview.GeckoSession;
@@ -79,6 +83,10 @@ public class MainActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT));
         content.addView(geckoView);
+
+        bindLicenseUi();
+        primeLicenseUi();
+        checkLicense(false);
 
         btnBack.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -327,6 +335,7 @@ public class MainActivity extends Activity {
         popup.getMenu().add(0, 3, 2, getString(R.string.menu_home));
         popup.getMenu().add(0, 4, 3, getString(R.string.menu_close_tab));
         popup.getMenu().add(0, 5, 4, getString(R.string.menu_about));
+        popup.getMenu().add(0, 6, 5, getString(R.string.license_menu));
         popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
@@ -345,6 +354,9 @@ public class MainActivity extends Activity {
                         return true;
                     case 5:
                         showAbout();
+                        return true;
+                    case 6:
+                        openLicenseScreen();
                         return true;
                     default:
                         return false;
@@ -395,6 +407,8 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
+        // 试用到期被拦在授权页时，返回键不生效，避免绕过。
+        if (gateForced && licenseGate.getVisibility() == View.VISIBLE) return;
         Tab t = currentTab();
         if (t != null && t.canGoBack) {
             t.session.goBack();
@@ -408,6 +422,15 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        // 回到前台时补一次校验：试用到期后立刻拦住，激活后立刻放行。
+        if (licenseGate == null || licenseBusy) return;
+        if (gateForced && licenseGate.getVisibility() == View.VISIBLE) return;
+        if (!LicenseManager.isActivated(this)) checkLicense(false);
+    }
+
+    @Override
     protected void onDestroy() {
         for (Tab t : tabs) {
             try {
@@ -417,5 +440,206 @@ public class MainActivity extends Activity {
         }
         tabs.clear();
         super.onDestroy();
+    }
+
+    // ---------------- 授权 / 试用 ----------------
+
+    private void bindLicenseUi() {
+        browserRoot = findViewById(R.id.browserRoot);
+        licenseGate = findViewById(R.id.licenseGate);
+        gateMessage = (TextView) findViewById(R.id.gateMessage);
+        deviceCodeView = (TextView) findViewById(R.id.deviceCode);
+        gateStatus = (TextView) findViewById(R.id.gateStatus);
+        trialBanner = (TextView) findViewById(R.id.trialBanner);
+        btnLater = (TextView) findViewById(R.id.btnLater);
+        licenseInput = (EditText) findViewById(R.id.licenseInput);
+        btnActivate = (Button) findViewById(R.id.btnActivate);
+
+        deviceCodeView.setText(LicenseManager.deviceId(this));
+
+        findViewById(R.id.btnCopyDevice).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                copyDeviceCode();
+            }
+        });
+
+        findViewById(R.id.btnCheckAgain).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                checkLicense(true);
+            }
+        });
+
+        btnLater.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!gateForced) showBrowser();
+            }
+        });
+
+        btnActivate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                doActivate();
+            }
+        });
+
+        licenseInput.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_DONE
+                        || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+                    doActivate();
+                    return true;
+                }
+                return false;
+            }
+        });
+    }
+
+    /** 启动瞬间先用本地缓存决定显示浏览器还是授权页，避免白屏等待网络。 */
+    private void primeLicenseUi() {
+        if (LicenseManager.isActivated(this)) {
+            showBrowser();
+            return;
+        }
+        if (LicenseManager.trialValid(this)) {
+            showBrowser();
+            showTrialBanner(LicenseManager.trialDaysLeft(this));
+            return;
+        }
+        if (LicenseManager.trialEndsAt(this) > 0) {
+            // 本地已知试用结束，先拦住，等服务器确认。
+            showGate(true, null);
+        }
+        // 首次安装（本地无记录）：先放行，由异步校验决定。
+    }
+
+    private void checkLicense(final boolean userTriggered) {
+        if (licenseBusy) return;
+        setLicenseBusy(true);
+        if (userTriggered && gateStatus != null) gateStatus.setText(R.string.license_checking);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                final LicenseManager.Status status = LicenseManager.fetchStatus(MainActivity.this);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        setLicenseBusy(false);
+                        applyStatus(status, userTriggered);
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void applyStatus(LicenseManager.Status status, boolean userTriggered) {
+        if (status.activated) {
+            showBrowser();
+            showTrialBanner(0);
+            if (userTriggered) toast(getString(R.string.license_activated_ok));
+            return;
+        }
+        if (status.reachable) {
+            if (status.trialExpired) {
+                showGate(true, null);
+            } else {
+                showBrowser();
+                showTrialBanner(status.daysLeft);
+            }
+            return;
+        }
+        // 服务器不可达：按本地缓存判断，拿不准时宁可放行，不要把人挡在门外。
+        if (LicenseManager.trialEndsAt(this) > 0 && !LicenseManager.trialValid(this)) {
+            showGate(true, getString(R.string.license_offline));
+        } else {
+            showBrowser();
+            if (LicenseManager.trialValid(this)) showTrialBanner(LicenseManager.trialDaysLeft(this));
+        }
+    }
+
+    private void doActivate() {
+        if (licenseBusy) return;
+        final String code = licenseInput.getText().toString();
+        setLicenseBusy(true);
+        gateStatus.setText(R.string.license_activating);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                final LicenseManager.ActivateResult result = LicenseManager.activate(MainActivity.this, code);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        setLicenseBusy(false);
+                        if (result.ok) {
+                            licenseInput.setText("");
+                            gateStatus.setText("");
+                            showBrowser();
+                            showTrialBanner(0);
+                            toast(getString(R.string.license_activated_ok));
+                        } else {
+                            gateStatus.setText(result.message);
+                        }
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void openLicenseScreen() {
+        if (LicenseManager.isActivated(this)) {
+            new AlertDialog.Builder(this)
+                    .setTitle(R.string.license_menu)
+                    .setMessage("本机已激活，永久有效。\n\n设备码：\n" + LicenseManager.deviceId(this))
+                    .setPositiveButton(R.string.ok, null)
+                    .show();
+            return;
+        }
+        showGate(false, null);
+        checkLicense(true);
+    }
+
+    private void showGate(boolean forced, String message) {
+        gateForced = forced;
+        if (message != null) gateMessage.setText(message);
+        else gateMessage.setText(R.string.license_expired);
+        btnLater.setVisibility(forced ? View.GONE : View.VISIBLE);
+        deviceCodeView.setText(LicenseManager.deviceId(this));
+        gateStatus.setText("");
+        licenseGate.setVisibility(View.VISIBLE);
+        browserRoot.setVisibility(View.GONE);
+    }
+
+    private void showBrowser() {
+        gateForced = false;
+        licenseGate.setVisibility(View.GONE);
+        browserRoot.setVisibility(View.VISIBLE);
+    }
+
+    private void showTrialBanner(int daysLeft) {
+        if (daysLeft <= 0) {
+            trialBanner.setVisibility(View.GONE);
+            return;
+        }
+        trialBanner.setText(getString(R.string.license_trial_days, daysLeft));
+        trialBanner.setVisibility(View.VISIBLE);
+    }
+
+    private void setLicenseBusy(boolean busy) {
+        licenseBusy = busy;
+        if (btnActivate != null) btnActivate.setEnabled(!busy);
+    }
+
+    private void copyDeviceCode() {
+        String code = LicenseManager.deviceId(this);
+        ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("device", code));
+        toast(getString(R.string.license_copied));
+    }
+
+    private void toast(String text) {
+        Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
     }
 }

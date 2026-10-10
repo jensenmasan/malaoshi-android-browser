@@ -36,7 +36,9 @@ import java.util.List;
  */
 public class MainActivity extends Activity {
 
-    private static final String HOME_URL = "file:///android_asset/home.html";
+    // GeckoView 与 WebView 的差异点：不认 file:///android_asset/，
+    // 必须用 resource://android/assets/ 才能读到 APK 内置资源。
+    private static final String HOME_URL = "resource://android/assets/home.html";
     private static final String SEARCH_PREFIX = "https://cn.bing.com/search?q=";
     static final String APP_VERSION = "1.1";
 
@@ -300,7 +302,8 @@ public class MainActivity extends Activity {
 
     private void updateUrlBar(String url) {
         if (urlBar.hasFocus()) return;
-        if (url == null || url.startsWith("file:///android_asset/")) {
+        if (url == null || url.startsWith("file:///android_asset/")
+                || url.startsWith("resource://android/assets/")) {
             urlBar.setText("");
         } else {
             urlBar.setText(url);

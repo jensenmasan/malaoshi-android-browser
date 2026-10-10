@@ -38,7 +38,7 @@ public class MainActivity extends Activity {
 
     private static final String HOME_URL = "file:///android_asset/home.html";
     private static final String SEARCH_PREFIX = "https://cn.bing.com/search?q=";
-    private static final String APP_VERSION = "1.0";
+    static final String APP_VERSION = "1.1";
 
     private GeckoRuntime runtime;
     private GeckoView geckoView;
@@ -46,6 +46,19 @@ public class MainActivity extends Activity {
     private ImageButton btnBack;
     private ImageButton btnForward;
     private ProgressBar progressBar;
+
+    // 授权 / 试用
+    private View browserRoot;
+    private View licenseGate;
+    private TextView gateMessage;
+    private TextView deviceCodeView;
+    private TextView gateStatus;
+    private TextView trialBanner;
+    private TextView btnLater;
+    private Button btnActivate;
+    private EditText licenseInput;
+    private boolean gateForced = false;
+    private boolean licenseBusy = false;
 
     private final List<Tab> tabs = new ArrayList<Tab>();
     private int currentIndex = -1;

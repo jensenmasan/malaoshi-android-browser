@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>马老师专属</title>
+<style>
+  :root { --red:#FC3528; --red-dark:#D62A1F; --cream:#FDF1E0; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; min-height:100%; }
+  body {
+    background: var(--cream);
+    font-family: -apple-system, "PingFang SC", "HarmonyOS Sans SC", "Noto Sans CJK SC",
+                 "Source Han Sans SC", "Microsoft YaHei", sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+    padding: 46px 22px 24px;
+    color:#2b2b2b;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none; user-select: none;
+  }
+  .logo {
+    width:96px; height:96px; border-radius:26px;
+    background: linear-gradient(160deg, #FF5B45, var(--red));
+    display:flex; align-items:center; justify-content:center;
+    font-size:54px; line-height:1; color:var(--cream); font-weight:700;
+    box-shadow: 0 10px 26px rgba(252,53,40,.28);
+  }
+  h1 { font-size:20px; margin:18px 0 12px; letter-spacing:3px; color:#8a2318; font-weight:600; }
+  .greet {
+    margin: 2px 0 28px; font-size:17px; letter-spacing:1px; color:#fff;
+    background: linear-gradient(135deg, var(--red), #FF6A3D);
+    padding:11px 24px; border-radius:999px;
+    box-shadow: 0 8px 20px rgba(252,53,40,.25);
+  }
+  form { width:100%; max-width:560px; display:flex; }
+  input[type=text] {
+    flex:1; height:50px; border:1.5px solid #eadcc6; border-right:none;
+    border-radius:999px 0 0 999px; padding:0 20px;
+    font-size:16px; background:#fff; outline:none; color:#2b2b2b;
+    -webkit-user-select: text; user-select: text;
+  }
+  input[type=text]:focus { border-color: var(--red); }
+  button {
+    height:50px; padding:0 22px; border:none;
+    background: var(--red); color:#fff;
+    border-radius:0 999px 999px 0; font-size:16px; font-weight:600;
+  }
+  button:active { background: var(--red-dark); }
+  .links {
+    margin-top:34px; display:flex; flex-wrap:wrap; gap:12px;
+    justify-content:center; max-width:560px;
+  }
+  .links a {
+    text-decoration:none; color:#8a2318; background:#fff;
+    border:1px solid #f0e2cd; padding:10px 18px;
+    border-radius:999px; font-size:15px;
+  }
+  .links a:active { background:#fff5ea; }
+  .foot { margin-top:auto; padding-top:32px; font-size:12px; color:#bda98d; }
+</style>
+</head>
+<body>
+  <div class="logo">马</div>
+  <h1>马老师专属</h1>
+  <div class="greet">马老师祝您新年快乐</div>
+
+  <form action="https://cn.bing.com/search" method="get">
+    <input type="text" name="q" placeholder="搜索或输入网址" autocomplete="off" autocapitalize="off" autocorrect="off">
+    <button type="submit">搜索</button>
+  </form>
+
+  <div class="links">
+    <a href="https://www.baidu.com">百度</a>
+    <a href="https://news.qq.com">腾讯新闻</a>
+    <a href="https://www.zhihu.com">知乎</a>
+    <a href="https://weibo.com">微博</a>
+    <a href="https://www.bilibili.com">哔哩哔哩</a>
+    <a href="https://www.taobao.com">淘宝</a>
+  </div>
+
+  <div class="foot">马老师专属 · GeckoView 内核</div>
+</body>
+</html>

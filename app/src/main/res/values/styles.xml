@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:colorPrimary">@color/theme_red</item>
+        <item name="android:colorPrimaryDark">@color/theme_red_dark</item>
+        <item name="android:colorAccent">@color/theme_red</item>
+        <item name="android:statusBarColor">@color/theme_red</item>
+        <item name="android:windowBackground">@color/cream</item>
+    </style>
+
+    <style name="ToolButton">
+        <item name="android:layout_width">42dp</item>
+        <item name="android:layout_height">42dp</item>
+        <item name="android:padding">9dp</item>
+        <item name="android:scaleType">fitCenter</item>
+        <item name="android:background">?android:attr/selectableItemBackgroundBorderless</item>
+        <item name="android:tint">@color/icon_tint</item>
+    </style>
+</resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="theme_red">#FC3528</color>
+    <color name="theme_red_dark">#D62A1F</color>
+    <color name="cream">#FDF1E0</color>
+    <color name="toolbar_bg">#FFFFFF</color>
+    <color name="icon_tint">#3A3A3A</color>
+    <color name="icon_tint_disabled">#C0C0C0</color>
+    <color name="urlbar_bg">#F1F1F1</color>
+    <color name="ic_launcher_background">#FC3528</color>
+</resources>

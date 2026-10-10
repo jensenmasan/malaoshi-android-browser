@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">马老师专属</string>
+    <string name="url_hint">搜索或输入网址</string>
+    <string name="menu_new_tab">新标签页</string>
+    <string name="menu_tabs">标签页</string>
+    <string name="menu_close_tab">关闭当前标签页</string>
+    <string name="menu_home">回到主页</string>
+    <string name="menu_about">关于</string>
+    <string name="about_title">关于</string>
+    <string name="about_app">马老师专属</string>
+    <string name="about_version">版本</string>
+    <string name="about_engine">浏览器内核</string>
+    <string name="about_engine_value">GeckoView（Firefox 内核）</string>
+    <string name="about_note">本浏览器可与其他浏览器共存，不会影响系统自带浏览器。</string>
+    <string name="new_tab">新标签页</string>
+    <string name="close">关闭</string>
+    <string name="ok">知道了</string>
+</resources>
